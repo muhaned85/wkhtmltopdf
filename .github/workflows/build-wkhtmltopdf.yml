@@ -1,0 +1,40 @@
+name: Build wkhtmltopdf 0.12.6 Portable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-linux-portable:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout packaging repo
+        uses: actions/checkout@v3
+        with:
+          repository: wkhtmltopdf/wkhtmltopdf
+          ref: 0.12.6
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake git qtbase5-dev qttools5-dev-tools libqt5webkit5-dev libssl-dev
+
+      - name: Build wkhtmltopdf static
+        run: |
+          mkdir build
+          cd build
+          cmake -DSTATIC_QT=ON -DSTATIC_LIBS=ON ..
+          make -j$(nproc)
+          mkdir -p ../wkhtmltox-portable/bin
+          cp bin/wkhtmltopdf ../wkhtmltox-portable/bin/
+          cp bin/wkhtmltoimage ../wkhtmltox-portable/bin/
+
+      - name: Create tar.xz archive
+        run: |
+          tar -cJf wkhtmltox-0.12.6-portable.tar.xz wkhtmltox-portable
+
+      - name: Upload portable binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: wkhtmltox-0.12.6-portable
+          path: wkhtmltox-0.12.6-portable.tar.xz
